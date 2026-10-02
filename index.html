@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VALKYRIE // TACTICAL CYBERNETIC INTERFACE</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+  <style>
+    /* ============================================================
+   VARIABLES / RESET
+   ============================================================ */
+    :root {
+      --bg: #05070c;
+      --panel: rgba(10, 16, 28, 0.70);
+      --panel-2: rgba(6, 11, 20, 0.55);
+      --cyan: #00f3ff;
+      --cyan-dim: rgba(0, 243, 255, 0.35);
+      --cyan-soft: rgba(0, 243, 255, 0.12);
+      --magenta: #ff0055;
+      --magenta-d: rgba(255, 0, 85, 0.35);
+      --green: #4dff9e;
+      --text: #cfe9f2;
+      --text-dim: rgba(160, 200, 215, 0.65);
+      --font-t: 'Orbitron', sans-serif;
+      --font-d: 'Rajdhani', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-d);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      cursor: none;
+    }
+
+    .btn,
+    .mod-card,
+    #audioBtn {
+      cursor: none;
+    }
+
+    /* ============================================================
+   CANVAS WEBGL
+   ============================================================ */
+    #webgl {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    /* ============================================================
+   CAPA HUD
+   ============================================================ */
+    #hud {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* ---------------- TOP BAR ---------------- */
+    .topbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 26px;
+      background: linear-gradient(180deg, rgba(5, 7, 12, 0.92) 0%, rgba(5, 7, 12, 0.55) 65%, rgba(5, 7, 12, 0) 100%);
+      border-bottom: 1px solid rgba(0, 243, 255, 0.14);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    .topbar::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 243, 255, 0.55) 20%, rgba(255, 0, 85, 0.35) 70%, transparent);
+    }
+
+    .tb-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .pulse {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green), 0 0 22px rgba(77, 255, 158, 0.5);
+      animation: pulseAnim 1.6s ease-in-out infinite;
+      flex: none;
+    }
+
+    @keyframes pulseAnim {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.45);
+        opacity: 0.55;
+      }
+    }
+
+    .brand {
+      font-family: var(--font-t);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      color: #eafcff;
+      text-shadow: 0 0 14px rgba(0, 243, 255, 0.55);
+    }
+
+    .badge {
+      font-family: var(--font-t);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      padding: 4px 9px;
+      color: var(--cyan);
+      border: 1px solid var(--cyan-dim);
+      background: rgba(0, 243, 255, 0.06);
+      clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+    }
+
+    .telemetry {
+      gap: 0;
+    }
+
+    .tel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 18px;
+      line-height: 1.15;
+    }
+
+    .tel .lbl {
+      font-family: var(--font-d);
+      font-size: 9.5px;
+      letter-spacing: 0.22em;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .tel .val {
+      font-family: var(--font-t);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--cyan);
+      text-shadow: 0 0 12px rgba(0, 243, 255, 0.6);
+      letter-spacing: 0.06em;
+    }
+
+    .sep {
+      width: 1px;
+      height: 26px;
+      background: linear-gradient(180deg, transparent, rgba(0, 243, 255, 0.35), transparent);
+    }
+
+    .clock {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-family: var(--font-t);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #eafcff;
+      text-shadow: 0 0 14px rgba(0, 243, 255, 0.45);
+    }
+
+    .clock .tz {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--cyan);
+      opacity: 0.8;
+    }
+
+    .btn-icon {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-t);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--text-dim);
+      background: rgba(0, 243, 255, 0.04);
+      border: 1px solid rgba(0, 242, 255, 0.5);
+      padding: 8px 14px;
+      transition: all 0.25s ease;
+      clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+    }
+
+    .btn-icon:hover {
+      color: #ffffff;
+      border-color: var(--cyan);
+      background: rgba(0, 243, 255, 0.12);
+      box-shadow: 0 0 22px rgba(0, 243, 255, 0.35), inset 0 0 16px rgba(0, 243, 255, 0.10);
+    }
+
+    .btn-icon .led {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #31414d;
+      box-shadow: none;
+      transition: all 0.3s ease;
+      flex: none;
+    }
+
+    .btn-icon.on {
+      color: var(--cyan);
+      border-color: var(--cyan-dim);
+    }
+
+    .btn-icon.on .led {
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan), 0 0 20px rgba(0, 243, 255, 0.6);
+      animation: pulseAnim 1.8s ease-in-out infinite;
+    }
+
+    /* ---------------- HERO PANEL ---------------- */
+    .hero-panel {
+      position: absolute;
+      left: 46px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 420px;
+      max-width: 36vw;
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      font-family: var(--font-t);
+      font-size: 10px;
+      letter-spacing: 0.34em;
+      color: var(--magenta);
+      text-shadow: 0 0 14px rgba(255, 0, 85, 0.6);
+      margin-bottom: 14px;
+      opacity: 0.95;
+    }
+
+    .glitch {
+      position: relative;
+      display: block;
+      font-family: var(--font-t);
+      font-weight: 900;
+      line-height: 0.94;
+      letter-spacing: 0.02em;
+      color: #f2feff;
+      text-shadow:
+        0 0 18px rgba(0, 243, 255, 0.55),
+        0 0 46px rgba(0, 243, 255, 0.25);
+    }
+
+    h1.glitch {
+      font-size: clamp(30px, 4.4vw, 58px);
+    }
+
+    h2.glitch.sub {
+      font-size: clamp(15px, 1.9vw, 24px);
+      font-weight: 700;
+      letter-spacing: 0.24em;
+      color: var(--cyan);
+      margin-top: 6px;
+      text-shadow: 0 0 16px rgba(0, 243, 255, 0.75), 0 0 40px rgba(0, 243, 255, 0.3);
+    }
+
+    .glitch::before,
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .glitch::before {
+      color: var(--cyan);
+      text-shadow: -2px 0 var(--cyan);
+      animation: glitchTop 4.2s infinite steps(1, end);
+    }
+
+    .glitch::after {
+      color: var(--magenta);
+      text-shadow: 2px 0 var(--magenta);
+      animation: glitchBot 3.4s infinite steps(1, end);
+    }
+
+    @keyframes glitchTop {
+
+      0%,
+      88%,
+      100% {
+        opacity: 0;
+        transform: translate(0, 0);
+        clip-path: inset(0 0 55% 0);
+      }
+
+      89% {
+        opacity: .85;
+        transform: translate(-4px, -2px);
+        clip-path: inset(6% 0 58% 0);
+      }
+
+      92% {
+        opacity: .85;
+        transform: translate(3px, 1px);
+        clip-path: inset(38% 0 34% 0);
+      }
+
+      95% {
+        opacity: .85;
+        transform: translate(-2px, 2px);
+        clip-path: inset(62% 0 8% 0);
+      }
+    }
+
+    @keyframes glitchBot {
+
+      0%,
+      84%,
+      100% {
+        opacity: 0;
+        transform: translate(0, 0);
+        clip-path: inset(55% 0 0 0);
+      }
+
+      85% {
+        opacity: .8;
+        transform: translate(4px, 2px);
+        clip-path: inset(50% 0 22% 0);
+      }
+
+      88% {
+        opacity: .8;
+        transform: translate(-3px, -1px);
+        clip-path: inset(70% 0 5% 0);
+      }
+
+      91% {
+        opacity: .8;
+        transform: translate(2px, -3px);
+        clip-path: inset(30% 0 48% 0);
+      }
+    }
+
+    .hero-desc {
+      margin-top: 20px;
+      font-size: 14.5px;
+      line-height: 1.65;
+      font-weight: 400;
+      color: rgba(190, 222, 235, 0.78);
+      max-width: 400px;
+      border-left: 2px solid rgba(0, 243, 255, 0.35);
+      padding-left: 14px;
+    }
+
+    /* Plasma bar */
+    .plasma {
+      margin-top: 26px;
+      max-width: 400px;
+    }
+
+    .plasma-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: var(--font-t);
+      font-size: 9.5px;
+      letter-spacing: 0.18em;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .plasma-head #plasmaVal {
+      color: var(--cyan);
+      font-size: 13px;
+      font-weight: 700;
+      text-shadow: 0 0 12px rgba(0, 243, 255, 0.7);
+    }
+
+    .plasma-track {
+      position: relative;
+      height: 9px;
+      background: rgba(0, 243, 255, 0.07);
+      border: 1px solid rgba(0, 243, 255, 0.22);
+      overflow: hidden;
+      clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+    }
+
+    .plasma-fill {
+      position: relative;
+      height: 100%;
+      width: 87%;
+      background: linear-gradient(90deg, #005f6b 0%, #00c8dd 45%, var(--cyan) 78%, #b8fbff 100%);
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.65);
+      transition: width 0.5s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .plasma-fill::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+      animation: shimmer 2.6s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-110%);
+      }
+
+      100% {
+        transform: translateX(110%);
+      }
+    }
+
+    /* Buttons */
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 26px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      pointer-events: auto;
+      position: relative;
+      font-family: var(--font-t);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      padding: 13px 22px;
+      color: #d6f7ff;
+      background: rgba(0, 243, 255, 0.05);
+      border: 1px solid var(--cyan-dim);
+      transition: all 0.25s ease;
+      clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
+      transform: translateX(-120%);
+      transition: transform 0.6s ease;
+    }
+
+    .btn:hover::before {
+      transform: translateX(120%);
+    }
+
+    .btn:hover {
+      color: #ffffff;
+      border-color: var(--cyan);
+      background: rgba(0, 243, 255, 0.16);
+      box-shadow: 0 0 26px rgba(0, 243, 255, 0.42), inset 0 0 20px rgba(0, 243, 255, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0) scale(0.985);
+    }
+
+    .btn-magenta {
+      border-color: var(--magenta-d);
+      color: #ffd3e1;
+      background: rgba(255, 0, 85, 0.05);
+    }
+
+    .btn-magenta:hover {
+      border-color: var(--magenta);
+      background: rgba(255, 0, 85, 0.16);
+      box-shadow: 0 0 26px rgba(255, 0, 85, 0.42), inset 0 0 20px rgba(255, 0, 85, 0.14);
+    }
+
+    .hero-log {
+      margin-top: 20px;
+      font-family: var(--font-d);
+      font-size: 11.5px;
+      letter-spacing: 0.1em;
+      color: rgba(0, 243, 255, 0.65);
+      min-height: 16px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 400px;
+    }
+
+    .hero-log::after {
+      content: '▊';
+      animation: blink 1s steps(1) infinite;
+      margin-left: 4px;
+    }
+
+    @keyframes blink {
+
+      0%,
+      50% {
+        opacity: 1;
+      }
+
+      51%,
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* ---------------- SIDE CARDS ---------------- */
+    .side-cards {
+      position: absolute;
+      right: 42px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 320px;
+      max-width: 30vw;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .mod-card {
+      pointer-events: auto;
+      position: relative;
+      padding: 15px 17px 16px;
+      background: linear-gradient(140deg, rgba(10, 16, 28, 0.78) 0%, rgba(6, 10, 18, 0.58) 100%);
+      backdrop-filter: blur(20px) saturate(150%);
+      -webkit-backdrop-filter: blur(20px) saturate(150%);
+      border: 1px solid rgba(0, 243, 255, 0.20);
+      box-shadow:
+        0 18px 46px rgba(0, 0, 0, 0.68),
+        inset 0 1px 0 rgba(0, 243, 255, 0.13),
+        0 0 26px rgba(0, 243, 255, 0.05);
+      transition: transform 0.3s cubic-bezier(.2, .8, .2, 1), border-color 0.3s, box-shadow 0.3s, background 0.3s;
+      overflow: hidden;
+    }
+
+    .mod-card::before,
+    .mod-card::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border: 1px solid rgba(0, 243, 255, 0.55);
+      pointer-events: none;
+      transition: border-color 0.3s;
+    }
+
+    .mod-card::before {
+      top: 5px;
+      left: 5px;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .mod-card::after {
+      bottom: 5px;
+      right: 5px;
+      border-left: none;
+      border-top: none;
+    }
+
+    .mod-card:hover {
+      transform: translateX(-7px);
+      border-color: rgba(0, 243, 255, 0.65);
+      background: linear-gradient(140deg, rgba(14, 26, 42, 0.85) 0%, rgba(8, 14, 24, 0.7) 100%);
+      box-shadow:
+        0 22px 60px rgba(0, 0, 0, 0.75),
+        inset 0 1px 0 rgba(0, 243, 255, 0.25),
+        0 0 40px rgba(0, 243, 255, 0.22);
+    }
+
+    .mod-card:hover::before,
+    .mod-card:hover::after {
+      border-color: var(--cyan);
+    }
+
+    .mod-card .scan {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -40%;
+      height: 40%;
+      background: linear-gradient(180deg, transparent, rgba(0, 243, 255, 0.10), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .mod-card:hover .scan {
+      opacity: 1;
+      animation: cardScan 1.5s linear infinite;
+    }
+
+    @keyframes cardScan {
+      0% {
+        top: -40%;
+      }
+
+      100% {
+        top: 110%;
+      }
+    }
+
+    .mod-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 9px;
+    }
+
+    .mod-id {
+      font-family: var(--font-t);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      color: var(--cyan);
+      text-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
+    }
+
+    .mod-status {
+      font-family: var(--font-t);
+      font-size: 8.5px;
+      letter-spacing: 0.18em;
+      color: var(--green);
+      border: 1px solid rgba(77, 255, 158, 0.35);
+      background: rgba(77, 255, 158, 0.07);
+      padding: 2px 7px;
+    }
+
+    .mod-card h3 {
+      font-family: var(--font-t);
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #eafcff;
+      margin-bottom: 7px;
+    }
+
+    .mod-card p {
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: rgba(178, 210, 224, 0.72);
+      font-weight: 400;
+    }
+
+    .mod-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 11px;
+      padding-top: 9px;
+      border-top: 1px solid rgba(0, 243, 255, 0.13);
+      font-family: var(--font-d);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      color: rgba(0, 243, 255, 0.62);
+    }
+
+    /* ---------------- BOTTOM BAR ---------------- */
+    .bottombar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding: 0 26px;
+      background: linear-gradient(0deg, rgba(5, 7, 12, 0.94) 0%, rgba(5, 7, 12, 0.5) 70%, rgba(5, 7, 12, 0) 100%);
+      border-top: 1px solid rgba(0, 243, 255, 0.13);
+      font-family: var(--font-d);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      color: rgba(150, 190, 205, 0.7);
+    }
+
+    .bottombar::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 0, 85, 0.35) 30%, rgba(0, 243, 255, 0.55) 75%, transparent);
+    }
+
+    .bb-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .bb-item span {
+      font-family: var(--font-t);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan);
+      text-shadow: 0 0 10px rgba(0, 243, 255, 0.55);
+    }
+
+    .bb-item.grow {
+      margin-left: auto;
+      color: rgba(0, 243, 255, 0.55);
+    }
+
+    .bb-item.grow span {
+      color: var(--green);
+      text-shadow: 0 0 10px rgba(77, 255, 158, 0.55);
+    }
+
+    /* ---------------- FX OVERLAYS ---------------- */
+    .fx-vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 19;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center,
+          rgba(0, 0, 0, 0) 42%,
+          rgba(0, 0, 0, 0.42) 76%,
+          rgba(0, 0, 0, 0.86) 100%);
+    }
+
+    .fx-scanlines {
+      position: fixed;
+      inset: -2px;
+      z-index: 20;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom,
+          rgba(0, 0, 0, 0) 0px,
+          rgba(0, 0, 0, 0) 2px,
+          rgba(0, 0, 0, 0.22) 3px,
+          rgba(0, 0, 0, 0) 4px);
+      opacity: 0.55;
+      animation: scanShift 9s linear infinite;
+    }
+
+    @keyframes scanShift {
+      0% {
+        background-position-y: 0;
+      }
+
+      100% {
+        background-position-y: 100px;
+      }
+    }
+
+    .fx-scanbar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 140px;
+      z-index: 21;
+      pointer-events: none;
+      background: linear-gradient(180deg,
+          rgba(0, 243, 255, 0) 0%,
+          rgba(0, 243, 255, 0.035) 45%,
+          rgba(0, 243, 255, 0.075) 50%,
+          rgba(0, 243, 255, 0.035) 55%,
+          rgba(0, 243, 255, 0) 100%);
+      animation: barSweep 7.5s linear infinite;
+    }
+
+    @keyframes barSweep {
+      0% {
+        transform: translateY(-160px);
+      }
+
+      100% {
+        transform: translateY(100vh);
+      }
+    }
+
+    /* ---------------- CURSOR ---------------- */
+    #cursor-dot,
+    #cursor-ring {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+      pointer-events: none;
+      border-radius: 50%;
+      will-change: transform;
+    }
+
+    #cursor-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan), 0 0 24px rgba(0, 243, 255, 0.6);
+    }
+
+    #cursor-ring {
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(0, 243, 255, 0.55);
+      box-shadow: 0 0 16px rgba(0, 243, 255, 0.22), inset 0 0 12px rgba(0, 243, 255, 0.10);
+      transition: width 0.22s ease, height 0.22s ease, border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    #cursor-ring.hover {
+      width: 56px;
+      height: 56px;
+      border-color: var(--magenta);
+      background: rgba(255, 0, 85, 0.07);
+      box-shadow: 0 0 24px rgba(255, 0, 85, 0.45), inset 0 0 16px rgba(255, 0, 85, 0.15);
+    }
+
+    /* ---------------- BOOT LOADER ---------------- */
+    #boot {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      background: var(--bg);
+      transition: opacity 0.9s ease, visibility 0.9s ease;
+    }
+
+    #boot.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .boot-ring {
+      width: 62px;
+      height: 62px;
+      border: 2px solid rgba(0, 243, 255, 0.14);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      box-shadow: 0 0 26px rgba(0, 243, 255, 0.28);
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .boot-text {
+      font-family: var(--font-t);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: rgba(0, 243, 255, 0.75);
+      text-shadow: 0 0 14px rgba(0, 243, 255, 0.5);
+    }
+
+    /* ---------------- RESPONSIVE ---------------- */
+    @media (max-width: 1180px) {
+      .telemetry .tel {
+        padding: 0 12px;
+      }
+
+      .hero-panel {
+        width: 360px;
+      }
+
+      .side-cards {
+        width: 280px;
+      }
+    }
+
+    @media (max-width: 1000px) {
+      .telemetry {
+        display: none;
+      }
+
+      .hero-panel {
+        left: 26px;
+        width: 320px;
+        max-width: 40vw;
+      }
+
+      .side-cards {
+        right: 22px;
+        width: 250px;
+      }
+
+      .mod-card p {
+        display: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        height: auto;
+        min-height: 100px;
+        flex-direction: column;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 12px;
+      }
+
+      .topbar .tb-group {
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .hero-panel {
+        text-align: center;
+        left: 18px;
+        right: 18px;
+        top: auto;
+        bottom: 62px;
+        transform: none;
+        width: auto;
+        max-width: none;
+      }
+
+      .hero-actions {
+        justify-content: center;
+      }
+
+      .side-cards {
+        display: none;
+      }
+
+      .hero-desc {
+        display: none;
+      }
+
+      .brand {
+        font-size: 10px;
+      }
+
+      .clock {
+        font-size: 12px;
+      }
+
+      .bottombar {
+        justify-content: center;
+        gap: 14px;
+        padding: 0 14px;
+        font-size: 9.5px;
+      }
+
+      .bb-item.grow {
+        display: none;
+      }
+    }
+
+    @media (hover: none) {
+
+      #cursor-dot,
+      #cursor-ring {
+        display: none;
+      }
+
+      body,
+      .btn,
+      .mod-card,
+      #audioBtn {
+        cursor: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ============ WEBGL CANVAS ============ -->
+  <canvas id="webgl"></canvas>
+
+  <!-- ============ HUD ============ -->
+  <div id="hud">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="tb-group">
+        <span class="pulse"></span>
+        <span class="brand">AURA // NEXUS-07</span>
+        <span class="badge">[SEC-LVL 4]</span>
+      </div>
+
+      <div class="tb-group telemetry">
+        <div class="tel">
+          <span class="lbl">CORE SYNC</span>
+          <span class="val" id="t-sync">99.9%</span>
+        </div>
+        <div class="sep"></div>
+        <div class="tel">
+          <span class="lbl">NEURAL LATENCY</span>
+          <span class="val" id="t-lat">1.4ms</span>
+        </div>
+        <div class="sep"></div>
+        <div class="tel">
+          <span class="lbl">GPU</span>
+          <span class="val" id="t-gpu">1850 MHz</span>
+        </div>
+      </div>
+
+      <div class="tb-group">
+        <div class="clock"><span id="t-clock">--:--:--</span><span class="tz">UTC</span></div>
+        <button id="audioBtn" class="btn-icon on" type="button" aria-pressed="true">
+          <span class="led"></span>
+          <span id="audioLabel">AUDIO // ON</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- HERO PANEL -->
+    <section class="hero-panel">
+      <div class="hero-tag">// UNIDAD DE ASALTO AÉREO — CLASE VALKYRIE</div>
+
+      <h1 class="glitch" data-text="VALKYRIE">VALKYRIE</h1>
+      <h2 class="glitch sub" data-text="COMBAT HELMET">COMBAT HELMET</h2>
+
+      <p class="hero-desc">
+        Blindaje de nano-cerámica biomecánico con malla reactiva de grafeno.
+        Absorción cinética adaptativa, disipación térmica por microcanales de plasma
+        y sellado hermético para entornos estratosféricos hostiles.
+      </p>
+
+      <div class="plasma">
+        <div class="plasma-head">
+          <span>FLUJO DE PLASMA IONIZADO</span>
+          <span id="plasmaVal">87%</span>
+        </div>
+        <div class="plasma-track">
+          <div class="plasma-fill" id="plasmaFill" style="width:87%"></div>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <button class="btn btn-cyan" id="btnDiag" type="button">DIAGNÓSTICO TOTAL</button>
+        <button class="btn btn-magenta" id="btnReset" type="button">RESETEAR VISTA</button>
+      </div>
+
+      <div class="hero-log" id="heroLog">&gt; SISTEMA EN ESPERA — NÚCLEO ESTABLE</div>
+    </section>
+
+    <!-- SIDE CARDS -->
+    <aside class="side-cards">
+      <article class="mod-card" data-focus="front" tabindex="0">
+        <span class="scan"></span>
+        <div class="mod-head">
+          <span class="mod-id">MOD 01</span>
+          <span class="mod-status">ACTIVO</span>
+        </div>
+        <h3>MATRIZ ÓPTICA HDR</h3>
+        <p>Array LiDAR de 64 canales con visión termográfica multiespectral y fusión de sensores en tiempo real.</p>
+        <div class="mod-meta"><span>RANGO 2.4 KM</span><span>60 FPS</span></div>
+      </article>
+
+      <article class="mod-card" data-focus="back" tabindex="0">
+        <span class="scan"></span>
+        <div class="mod-head">
+          <span class="mod-id">MOD 02</span>
+          <span class="mod-status">ACTIVO</span>
+        </div>
+        <h3>CONECTOR NEURO-LINK</h3>
+        <p>Enlace sináptico de grafeno con ancho de banda de 12 Tb/s y latencia sub-milisegundo.</p>
+        <div class="mod-meta"><span>12 Tb/s</span><span>0.8 MS</span></div>
+      </article>
+
+      <article class="mod-card" data-focus="side" tabindex="0">
+        <span class="scan"></span>
+        <div class="mod-head">
+          <span class="mod-id">MOD 03</span>
+          <span class="mod-status">ACTIVO</span>
+        </div>
+        <h3>CORAZA NANO-TITANIO</h3>
+        <p>Estructura celular de nano-titanio con disipación de plasma del 94.2% y autorreparación molecular.</p>
+        <div class="mod-meta"><span>DISIPACIÓN 94.2%</span><span>CLASE V</span></div>
+      </article>
+    </aside>
+
+    <!-- BOTTOM BAR -->
+    <footer class="bottombar">
+      <div class="bb-item">ROT_X <span id="rotX">0.0°</span></div>
+      <div class="bb-item">ROT_Y <span id="rotY">0.0°</span></div>
+      <div class="bb-item">PARTÍCULAS <span id="pCount">1500</span></div>
+      <div class="bb-item grow">ENLACE NEURAL ESTABLE // <span id="bbStatus">SINCRONIZADO</span></div>
+    </footer>
+
+  </div>
+
+  <!-- ============ FX OVERLAYS ============ -->
+  <div class="fx-vignette"></div>
+  <div class="fx-scanlines"></div>
+  <div class="fx-scanbar"></div>
+
+  <!-- ============ CURSOR ============ -->
+  <div id="cursor-ring"></div>
+  <div id="cursor-dot"></div>
+
+  <!-- ============ BOOT ============ -->
+  <div id="boot">
+    <div class="boot-ring"></div>
+    <div class="boot-text">CARGANDO ACTIVOS TÁCTICOS...</div>
+  </div>
+
+  <!-- ============================================================
+     THREE.JS
+     ============================================================ -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    /* ============================================================
+       1. MOTOR DE AUDIO NATIVO (Web Audio API)
+       ============================================================ */
+    const SFX = (function () {
+      let ctx = null;
+      let master = null;
+      let noiseBuffer = null;
+      let enabled = true;
+
+      function ensure() {
+        if (!ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return false;
+          ctx = new AC();
+
+          const comp = ctx.createDynamicsCompressor();
+          comp.threshold.value = -18;
+          comp.knee.value = 22;
+          comp.ratio.value = 8;
+          comp.attack.value = 0.003;
+          comp.release.value = 0.22;
+          comp.connect(ctx.destination);
+
+          master = ctx.createGain();
+          master.gain.value = 0.42;
+          master.connect(comp);
+
+          // Buffer de ruido blanco reutilizable
+          const len = Math.floor(ctx.sampleRate * 2);
+          noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
+          const data = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+        }
+        if (ctx.state === 'suspended') ctx.resume();
+        return true;
+      }
+
+      function tone(o) {
+        if (!enabled || !ctx) return;
+        const {
+          freq = 440, type = 'sine', dur = 0.12, vol = 0.2,
+          sweep = null, delay = 0, attack = 0.006
+        } = o || {};
+        const t0 = ctx.currentTime + delay;
+
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t0);
+        if (sweep) {
+          osc.frequency.exponentialRampToValueAtTime(Math.max(sweep, 1), t0 + dur);
+        }
+
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(Math.max(vol, 0.0002), t0 + attack);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+        osc.connect(g);
+        g.connect(master);
+        osc.start(t0);
+        osc.stop(t0 + dur + 0.05);
+      }
+
+      function noise(o) {
+        if (!enabled || !ctx) return;
+        const {
+          dur = 0.3, vol = 0.14, freq = 1200, q = 1.2,
+          type = 'bandpass', delay = 0, sweepTo = null
+        } = o || {};
+        const t0 = ctx.currentTime + delay;
+
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer;
+        src.loop = true;
+
+        const filt = ctx.createBiquadFilter();
+        filt.type = type;
+        filt.Q.value = q;
+        filt.frequency.setValueAtTime(freq, t0);
+        if (sweepTo) filt.frequency.exponentialRampToValueAtTime(sweepTo, t0 + dur);
+
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(Math.max(vol, 0.0002), t0 + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+        src.connect(filt);
+        filt.connect(g);
+        g.connect(master);
+        src.start(t0);
+        src.stop(t0 + dur + 0.06);
+      }
+
+      /* ---- Efectos concretos ---- */
+      function hover() {
+        tone({ freq: 1750, type: 'triangle', dur: 0.045, vol: 0.055, attack: 0.003 });
+        tone({ freq: 3400, type: 'sine', dur: 0.032, vol: 0.028, delay: 0.008 });
+      }
+
+      function click() {
+        tone({ freq: 1180, type: 'square', dur: 0.075, vol: 0.10, sweep: 420, attack: 0.002 });
+        tone({ freq: 240, type: 'sawtooth', dur: 0.11, vol: 0.07, sweep: 90 });
+        noise({ dur: 0.055, vol: 0.05, freq: 3200, q: 2.2 });
+      }
+
+      function confirm() {
+        tone({ freq: 620, type: 'triangle', dur: 0.09, vol: 0.10 });
+        tone({ freq: 930, type: 'triangle', dur: 0.11, vol: 0.09, delay: 0.075 });
+        tone({ freq: 1390, type: 'sine', dur: 0.16, vol: 0.08, delay: 0.155 });
+      }
+
+      function powerOn() {
+        tone({ freq: 180, type: 'sawtooth', dur: 0.42, vol: 0.10, sweep: 1400 });
+        tone({ freq: 1400, type: 'sine', dur: 0.22, vol: 0.07, delay: 0.3, sweep: 2100 });
+        noise({ dur: 0.34, vol: 0.055, freq: 700, sweepTo: 5200, q: 1.6 });
+      }
+
+      function powerOff() {
+        tone({ freq: 1200, type: 'sine', dur: 0.3, vol: 0.09, sweep: 160 });
+        noise({ dur: 0.24, vol: 0.05, freq: 4000, sweepTo: 500, q: 1.4 });
+      }
+
+      function diagnostic() {
+        if (!enabled || !ctx) return;
+        // Barrido principal
+        tone({ freq: 190, type: 'sawtooth', dur: 1.0, vol: 0.085, sweep: 2600 });
+        noise({ dur: 1.0, vol: 0.075, freq: 260, sweepTo: 7200, q: 1.6 });
+        // Pulsos de escaneo
+        [0, 0.11, 0.22, 0.33, 0.44].forEach((d, i) => {
+          tone({ freq: 900 + i * 260, type: 'square', dur: 0.055, vol: 0.038, delay: 0.12 + d });
+        });
+        // Confirmación final
+        tone({ freq: 1650, type: 'sine', dur: 0.4, vol: 0.08, delay: 0.82, sweep: 520 });
+        tone({ freq: 2400, type: 'triangle', dur: 0.3, vol: 0.045, delay: 0.95, sweep: 1200 });
+      }
+
+      function focus() {
+        tone({ freq: 340, type: 'sine', dur: 0.5, vol: 0.075, sweep: 880 });
+        noise({ dur: 0.36, vol: 0.04, freq: 900, sweepTo: 2600, q: 1.1 });
+      }
+
+      function toggle() {
+        if (!ensure()) return false;
+        enabled = !enabled;
+        if (enabled) {
+          ctx.resume();
+          powerOn();
+        } else {
+          // Reproducimos el apagado antes de que enabled lo bloquee
+          enabled = true;
+          powerOff();
+          setTimeout(() => { enabled = false; }, 10);
+          return false;
+        }
+        return true;
+      }
+
+      return {
+        hover,
+        click,
+        confirm,
+        diagnostic,
+        focus,
+        toggle,
+        ensure,
+        isEnabled: () => enabled
+      };
+    })();
+
+    /* ============================================================
+       2. CURSOR CIBERNÉTICO
+       ============================================================ */
+    const cursorDot = document.getElementById('cursor-dot');
+    const cursorRing = document.getElementById('cursor-ring');
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let ringX = mouseX;
+    let ringY = mouseY;
+
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      cursorDot.style.transform =
+        `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%)`;
+    }, { passive: true });
+
+    (function cursorLoop() {
+      ringX += (mouseX - ringX) * 0.16;
+      ringY += (mouseY - ringY) * 0.16;
+      cursorRing.style.transform =
+        `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
+      requestAnimationFrame(cursorLoop);
+    })();
+
+    /* ============================================================
+       3. ESCENA THREE.JS
+       ============================================================ */
+    const canvas = document.getElementById('webgl');
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070c);
+    scene.fog = new THREE.FogExp2(0x05070c, 0.02);
+
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      window.innerWidth / window.innerHeight,
+      0.01,
+      2000
+    );
+    camera.position.set(0, 0.4, 5);
+
+    /* --- Entorno PBR suave para reflejos metálicos --- */
+    try {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      pmrem.compileEquirectangularShader();
+      const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+      scene.environment = envRT.texture;
+      pmrem.dispose();
+    } catch (e) {
+      console.warn('[VALKYRIE] Entorno PBR no disponible:', e);
+    }
+
+    /* --- Controles orbitales con inercia cinemática --- */
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.65;
+    controls.enablePan = false;
+    controls.rotateSpeed = 0.85;
+    controls.zoomSpeed = 0.8;
+    controls.target.set(0, 0, 0);
+
+    /* --- Iluminación dramática --- */
+    const ambient = new THREE.AmbientLight(0x101828, 2.4);
+    scene.add(ambient);
+
+    const keyLight = new THREE.DirectionalLight(0x00f3ff, 3.4);
+    keyLight.position.set(5, 4, 6);
+    scene.add(keyLight);
+
+    const rimLight = new THREE.DirectionalLight(0xff0055, 2.8);
+    rimLight.position.set(-6, 2, -5);
+    scene.add(rimLight);
+
+    const fillLight = new THREE.DirectionalLight(0x2a4a8a, 1.1);
+    fillLight.position.set(0, -5, 3);
+    scene.add(fillLight);
+
+    const accentPoint = new THREE.PointLight(0x00f3ff, 6, 12, 2);
+    accentPoint.position.set(0, 1.5, 3);
+    scene.add(accentPoint);
+
+    const magentaPoint = new THREE.PointLight(0xff0055, 4, 12, 2);
+    magentaPoint.position.set(-3, -1, -2.5);
+    scene.add(magentaPoint);
+
+    /* --- Grupo pivote que contiene el modelo centrado --- */
+    const pivot = new THREE.Group();
+    scene.add(pivot);
+
+    /* --- Estado global del modelo --- */
+    let maxDim = 2;
+    let camDefault = new THREE.Vector3(0, 0.5, 5);
+    let modelReady = false;
+
+    /* ============================================================
+       4. TEXTURA DE PARTÍCULA (sprite generado en canvas)
+       ============================================================ */
+    function createParticleSprite() {
+      const size = 64;
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const g = c.getContext('2d');
+      const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      grad.addColorStop(0.0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.25, 'rgba(160,245,255,0.85)');
+      grad.addColorStop(0.6, 'rgba(0,200,255,0.25)');
+      grad.addColorStop(1.0, 'rgba(0,0,0,0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, size, size);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+    const particleSprite = createParticleSprite();
+
+    /* ============================================================
+       5. CAMPO DE PARTÍCULAS (1.500)
+       ============================================================ */
+    let particles = null;
+    const PARTICLE_COUNT = 1500;
+
+    function createParticleField(scale) {
+      if (particles) {
+        scene.remove(particles);
+        particles.geometry.dispose();
+        particles.material.dispose();
+        particles = null;
+      }
+
+      const positions = new Float32Array(PARTICLE_COUNT * 3);
+      const sizes = new Float32Array(PARTICLE_COUNT);
+      const spread = scale * 9;
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const r = spread * (0.30 + Math.random() * 0.70);
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+
+        positions[i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = r * Math.cos(phi) * 0.72;
+        positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+
+        sizes[i] = 0.5 + Math.random() * 1.2;
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+
+      const mat = new THREE.PointsMaterial({
+        size: scale * 0.022,
+        map: particleSprite,
+        color: 0x74e9ff,
+        transparent: true,
+        opacity: 0.72,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true
+      });
+
+      particles = new THREE.Points(geo, mat);
+      particles.frustumCulled = false;
+      scene.add(particles);
+
+      document.getElementById('pCount').textContent = PARTICLE_COUNT;
+    }
+
+    /* ============================================================
+       6. CASCO PROCEDURAL DE RESPALDO (por si falta el .glb)
+       ============================================================ */
+    function buildFallbackHelmet() {
+      const group = new THREE.Group();
+
+      const shellMat = new THREE.MeshStandardMaterial({
+        color: 0x1c2532,
+        metalness: 0.95,
+        roughness: 0.30,
+        envMapIntensity: 1.0
+      });
+
+      const darkMat = new THREE.MeshStandardMaterial({
+        color: 0x0b1018,
+        metalness: 0.85,
+        roughness: 0.55,
+        envMapIntensity: 0.8
+      });
+
+      const glowMat = new THREE.MeshStandardMaterial({
+        color: 0x00f3ff,
+        emissive: 0x00b8d4,
+        emissiveIntensity: 2.2,
+        metalness: 0.4,
+        roughness: 0.12,
+        transparent: true,
+        opacity: 0.92,
+        envMapIntensity: 1.2
+      });
+
+      const magentaMat = new THREE.MeshStandardMaterial({
+        color: 0xff0055,
+        emissive: 0xff0055,
+        emissiveIntensity: 1.8,
+        metalness: 0.5,
+        roughness: 0.25
+      });
+
+      // Cúpula principal
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), shellMat);
+      dome.scale.set(1, 1.13, 1.05);
+      group.add(dome);
+
+      // Visor frontal (parche esférico hacia +Z)
+      const visor = new THREE.Mesh(
+        new THREE.SphereGeometry(1.018, 64, 48, Math.PI / 2 - 0.95, 1.9, 1.02, 0.78),
+        glowMat
+      );
+      visor.scale.set(1, 1.13, 1.05);
+      group.add(visor);
+
+      // Anillo de cuello
+      const neck = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.10, 16, 64), darkMat);
+      neck.rotation.x = -Math.PI / 2;
+      neck.position.y = -1.02;
+      group.add(neck);
+
+      // Aletas laterales
+      for (const s of [-1, 1]) {
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.42, 0.5), darkMat);
+        fin.position.set(s * 0.94, -0.05, 0.02);
+        fin.rotation.z = s * 0.16;
+        group.add(fin);
+
+        const led = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.05, 16), magentaMat);
+        led.rotation.z = Math.PI / 2;
+        led.position.set(s * 1.0, 0.28, 0.16);
+        group.add(led);
+      }
+
+      // Cresta superior
+      const crest = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.16, 1.1), darkMat);
+      crest.position.set(0, 1.05, -0.05);
+      crest.rotation.x = -0.12;
+      group.add(crest);
+
+      // Antena
+      const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.028, 0.75, 10), darkMat);
+      antenna.position.set(0.62, 0.92, -0.32);
+      antenna.rotation.z = -0.32;
+      group.add(antenna);
+
+      const antennaTip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 16), glowMat);
+      antennaTip.position.set(0.74, 1.28, -0.32);
+      group.add(antennaTip);
+
+      // Detalles inferiores
+      const chin = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.22, 0.42), darkMat);
+      chin.position.set(0, -0.78, 0.62);
+      chin.rotation.x = 0.28;
+      group.add(chin);
+
+      return group;
+    }
+
+    /* ============================================================
+       7. CONFIGURACIÓN DEL MODELO (centrado + encuadre automático)
+       ============================================================ */
+    function setupModel(object) {
+      // --- Caja delimitadora real ---
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      maxDim = Math.max(size.x, size.y, size.z) || 1;
+
+      // --- Centrado perfecto en (0,0,0) ---
+      object.position.sub(center);
+
+      // Pequeño ajuste para que el modelo se apoye ligeramente por debajo del centro óptico
+      object.position.y += maxDim * 0.02;
+
+      pivot.add(object);
+
+      // --- Materiales ---
+      object.traverse((o) => {
+        if (o.isMesh) {
+          o.castShadow = false;
+          o.receiveShadow = false;
+          if (o.material) {
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            mats.forEach((m) => {
+              if ('envMapIntensity' in m) m.envMapIntensity = 0.9;
+              if (m.map && 'anisotropy' in m.map) {
+                m.map.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+              }
+            });
+          }
+        }
+      });
+
+      // --- Encuadre automático de cámara según el tamaño real ---
+      const fovRad = (camera.fov * Math.PI) / 180;
+      const fitDist = (maxDim * 0.5) / Math.tan(fovRad / 2) * 1.55;
+
+      camDefault.set(0, maxDim * 0.14, fitDist);
+      camera.position.copy(camDefault);
+      camera.near = Math.max(maxDim * 0.005, 0.001);
+      camera.far = maxDim * 200;
+      camera.updateProjectionMatrix();
+
+      controls.target.set(0, 0, 0);
+      controls.minDistance = maxDim * 0.75;
+      controls.maxDistance = maxDim * 6.5;
+      controls.update();
+
+      // --- Ajuste de luces a la escala del modelo ---
+      keyLight.position.set(maxDim * 3.0, maxDim * 2.4, maxDim * 3.6);
+      rimLight.position.set(-maxDim * 3.4, maxDim * 1.2, -maxDim * 2.8);
+      fillLight.position.set(0, -maxDim * 3.0, maxDim * 2.0);
+      accentPoint.position.set(0, maxDim * 0.9, maxDim * 1.8);
+      accentPoint.distance = maxDim * 8;
+      magentaPoint.position.set(-maxDim * 1.8, -maxDim * 0.6, -maxDim * 1.5);
+      magentaPoint.distance = maxDim * 8;
+
+      // --- Niebla proporcional ---
+      scene.fog.density = 0.30 / maxDim;
+
+      // --- Partículas a escala ---
+      createParticleField(maxDim);
+
+      modelReady = true;
+      hideBoot();
+      log('> MODELO SINCRONIZADO — GEOMETRÍA VÁLIDA');
+    }
+
+    /* ============================================================
+       8. CARGA DEL GLTF
+       ============================================================ */
+    const gltfLoader = new GLTFLoader();
+    let bootHidden = false;
+
+    function hideBoot() {
+      if (bootHidden) return;
+      bootHidden = true;
+      const boot = document.getElementById('boot');
+      boot.classList.add('hidden');
+      setTimeout(() => { boot.style.display = 'none'; }, 1000);
+    }
+
+    gltfLoader.load(
+      './assets/scifi-helmet.glb',
+      (gltf) => {
+        setupModel(gltf.scene);
+      },
+      (xhr) => {
+        if (xhr.total > 0) {
+          const pct = Math.round((xhr.loaded / xhr.total) * 100);
+          const t = document.querySelector('.boot-text');
+          if (t) t.textContent = `CARGANDO ACTIVOS TÁCTICOS... ${pct}%`;
+        }
+      },
+      (err) => {
+        console.warn('[VALKYRIE] No se pudo cargar ./assets/scifi-helmet.glb — usando casco procedural.', err);
+        log('> AVISO: ASSET EXTERNO NO DISPONIBLE — MODO PROCEDURAL');
+        setupModel(buildFallbackHelmet());
+      }
+    );
+
+    // Red de seguridad: si en 9s no hay modelo, forzamos el procedural
+    setTimeout(() => {
+      if (!modelReady) {
+        console.warn('[VALKYRIE] Timeout de carga — activando casco procedural.');
+        log('> TIMEOUT DE ASSET — GENERANDO MALLA PROCEDURAL');
+        setupModel(buildFallbackHelmet());
+      }
+    }, 9000);
+
+    /* ============================================================
+       9. ONDA DE ESCANEO (DIAGNÓSTICO TOTAL)
+       ============================================================ */
+    let scanRing = null;
+
+    function triggerScanWave() {
+      if (!scanRing) {
+        const geo = new THREE.RingGeometry(0.88, 1.0, 96);
+        const mat = new THREE.MeshBasicMaterial({
+          color: 0x00f3ff,
+          transparent: true,
+          opacity: 0,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        scanRing = new THREE.Mesh(geo, mat);
+        scanRing.frustumCulled = false;
+        scene.add(scanRing);
+      }
+      scanRing.userData.t = 0;
+      scanRing.userData.active = true;
+    }
+
+    /* ============================================================
+       10. SISTEMA DE ENFOQUE DE CÁMARA
+       ============================================================ */
+    let focusState = null;
+    let autoRotateWanted = true;
+
+    const FOCUS_VIEWS = {
+      front: { dir: new THREE.Vector3(0.10, 0.30, 1.00), dist: 1.18, targetY: 0.10 },
+      back: { dir: new THREE.Vector3(-0.35, 0.24, -1.00), dist: 1.32, targetY: 0.04 },
+      side: { dir: new THREE.Vector3(1.00, 0.18, 0.38), dist: 1.30, targetY: 0.00 }
+    };
+
+    function focusCameraOn(viewKey) {
+      if (!modelReady) return;
+      const view = FOCUS_VIEWS[viewKey] || FOCUS_VIEWS.front;
+
+      const dir = view.dir.clone().normalize();
+      const pos = dir.multiplyScalar(maxDim * view.dist);
+      const target = new THREE.Vector3(0, maxDim * view.targetY, 0);
+
+      focusState = { pos, target, t: 0 };
+      controls.autoRotate = false;
+    }
+
+    function resetView() {
+      focusState = {
+        pos: camDefault.clone(),
+        target: new THREE.Vector3(0, 0, 0),
+        t: 0
+      };
+      controls.autoRotate = false;
+      autoRotateWanted = true;
+    }
+
+    /* ============================================================
+       11. HUD — UTILIDADES
+       ============================================================ */
+    const el = (id) => document.getElementById(id);
+    const heroLog = el('heroLog');
+
+    let logTimeout = null;
+    function log(msg) {
+      heroLog.textContent = msg;
+      clearTimeout(logTimeout);
+      logTimeout = setTimeout(() => {
+        heroLog.textContent = '> SISTEMA EN ESPERA — NÚCLEO ESTABLE';
+      }, 4200);
+    }
+
+    /* Reloj UTC */
+    function updateClock() {
+      const d = new Date();
+      const hh = String(d.getUTCHours()).padStart(2, '0');
+      const mm = String(d.getUTCMinutes()).padStart(2, '0');
+      const ss = String(d.getUTCSeconds()).padStart(2, '0');
+      el('t-clock').textContent = `${hh}:${mm}:${ss}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* Telemetría fluctuante */
+    setInterval(() => {
+      const sync = (99.1 + Math.random() * 0.9).toFixed(1);
+      const lat = (1.1 + Math.random() * 1.3).toFixed(1);
+      const gpu = Math.round(1830 + Math.random() * 45);
+
+      el('t-sync').textContent = `${sync}%`;
+      el('t-lat').textContent = `${lat}ms`;
+      el('t-gpu').textContent = `${gpu} MHz`;
+    }, 850);
+
+    /* Plasma animado */
+    let plasma = 87;
+    setInterval(() => {
+      plasma += (Math.random() - 0.5) * 1.6;
+      plasma = Math.max(82, Math.min(93, plasma));
+      el('plasmaFill').style.width = plasma.toFixed(1) + '%';
+      el('plasmaVal').textContent = Math.round(plasma) + '%';
+    }, 1600);
+
+    /* ============================================================
+       12. INTERACCIÓN — BOTONES Y TARJETAS
+       ============================================================ */
+    const interactive = document.querySelectorAll('.btn, .mod-card, #audioBtn');
+
+    interactive.forEach((node) => {
+      node.addEventListener('mouseenter', () => {
+        cursorRing.classList.add('hover');
+        SFX.hover();
+      });
+      node.addEventListener('mouseleave', () => {
+        cursorRing.classList.remove('hover');
+      });
+    });
+
+    /* --- Botón de audio --- */
+    const audioBtn = el('audioBtn');
+    const audioLabel = el('audioLabel');
+
+    audioBtn.addEventListener('click', () => {
+      const on = SFX.toggle();
+      audioBtn.classList.toggle('on', on);
+      audioBtn.setAttribute('aria-pressed', String(on));
+      audioLabel.textContent = on ? 'AUDIO // ON' : 'AUDIO // OFF';
+      log(on ? '> SUBSISTEMA DE AUDIO EN LÍNEA' : '> SUBSISTEMA DE AUDIO DESCONECTADO');
+    });
+
+    /* --- Diagnóstico total --- */
+    el('btnDiag').addEventListener('click', () => {
+      SFX.diagnostic();
+      triggerScanWave();
+
+      el('bbStatus').textContent = 'ESCANEANDO...';
+      log('> DIAGNÓSTICO TOTAL INICIADO — BARRIDO MULTIESPECTRAL');
+
+      // Parpadeo de acento
+      accentPoint.intensity = 26;
+      magentaPoint.intensity = 16;
+
+      const t0 = performance.now();
+      const dur = 1100;
+      (function flash() {
+        const p = (performance.now() - t0) / dur;
+        if (p >= 1) {
+          accentPoint.intensity = 6;
+          magentaPoint.intensity = 4;
+          el('bbStatus').textContent = 'SINCRONIZADO';
+          log('> DIAGNÓSTICO COMPLETO — 0 ANOMALÍAS DETECTADAS');
+          return;
+        }
+        const k = 6 + Math.sin(p * Math.PI * 8) * 14 * (1 - p);
+        accentPoint.intensity = k;
+        magentaPoint.intensity = 4 + Math.sin(p * Math.PI * 6) * 9 * (1 - p);
+        requestAnimationFrame(flash);
+      })();
+    });
+
+    /* --- Reset de vista --- */
+    el('btnReset').addEventListener('click', () => {
+      SFX.click();
+      SFX.confirm();
+      resetView();
+      log('> VISTA RESETEADA — ORBITAL AUTOMÁTICO REACTIVADO');
+    });
+
+    /* --- Tarjetas modulares --- */
+    document.querySelectorAll('.mod-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        SFX.click();
+        SFX.focus();
+
+        const view = card.dataset.focus || 'front';
+        focusCameraOn(view);
+
+        const title = card.querySelector('h3').textContent;
+        log(`> ENFOQUE TÁCTICO: ${title}`);
+
+        // Pequeño destello magenta de confirmación
+        magentaPoint.intensity = 14;
+        setTimeout(() => { magentaPoint.intensity = 4; }, 420);
+      });
+
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
+
+    /* ============================================================
+       13. BUCLE DE RENDER
+       ============================================================ */
+    const clock = new THREE.Clock();
+    let hudAccum = 0;
+
+    const rotXEl = el('rotX');
+    const rotYEl = el('rotY');
+    const tmpSpherical = new THREE.Spherical();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const t = clock.getElapsedTime();
+
+      /* --- Partículas: deriva orbital --- */
+      if (particles) {
+        particles.rotation.y += dt * 0.022;
+        particles.rotation.x = Math.sin(t * 0.11) * 0.045;
+        particles.material.opacity = 0.62 + Math.sin(t * 0.8) * 0.10;
+      }
+
+      /* --- Transición de enfoque --- */
+      if (focusState) {
+        camera.position.lerp(focusState.pos, 0.055);
+        controls.target.lerp(focusState.target, 0.055);
+        focusState.t += dt;
+
+        const arrived = camera.position.distanceTo(focusState.pos) < maxDim * 0.006;
+        if (arrived || focusState.t > 3.2) {
+          focusState = null;
+          controls.autoRotate = autoRotateWanted;
+        }
+      }
+
+      /* --- Onda de escaneo --- */
+      if (scanRing && scanRing.userData.active) {
+        const u = scanRing.userData;
+        u.t += dt;
+        const p = u.t / 1.7;
+        if (p >= 1) {
+          u.active = false;
+          scanRing.material.opacity = 0;
+        } else {
+          const s = maxDim * (0.35 + p * 2.3);
+          scanRing.scale.setScalar(s);
+          scanRing.material.opacity = (1 - p) * 0.85;
+          scanRing.quaternion.copy(camera.quaternion);
+        }
+      }
+
+      /* --- Respiración sutil del acento lumínico --- */
+      if (!focusState) {
+        accentPoint.intensity = 6 + Math.sin(t * 1.6) * 1.4;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+
+      /* --- HUD: telemetría de rotación (throttled) --- */
+      hudAccum += dt;
+      if (hudAccum > 0.08) {
+        hudAccum = 0;
+
+        const offset = camera.position.clone().sub(controls.target);
+        tmpSpherical.setFromVector3(offset);
+
+        const rotY = THREE.MathUtils.radToDeg(tmpSpherical.theta);
+        const rotX = THREE.MathUtils.radToDeg(Math.PI / 2 - tmpSpherical.phi);
+
+        rotXEl.textContent = `${rotX >= 0 ? '+' : ''}${rotX.toFixed(1)}°`;
+        rotYEl.textContent = `${rotY >= 0 ? '+' : ''}${rotY.toFixed(1)}°`;
+      }
+    }
+
+    animate();
+
+    /* ============================================================
+       14. RESIZE
+       ============================================================ */
+    let resizeTimeout = null;
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (modelReady) {
+          const fovRad = (camera.fov * Math.PI) / 180;
+          const fitDist = (maxDim * 0.5) / Math.tan(fovRad / 2) * 1.55;
+          camDefault.set(0, maxDim * 0.14, fitDist);
+        }
+      }, 180);
+    }, { passive: true });
+
+    /* ============================================================
+       15. ARRANQUE — primer gesto del usuario
+       ============================================================ */
+    window.addEventListener('pointerdown', () => {
+      SFX.ensure();
+    }, { once: true });
+
+    console.log('%cVALKYRIE // TACTICAL CYBERNETIC INTERFACE', 'color:#00f3ff;font-family:Orbitron;font-size:14px;font-weight:bold;');
+    console.log('%cSistema en línea. Núcleo estable.', 'color:#ff0055;font-family:Rajdhani;font-size:12px;');
+  </script>
+
+</body>
+
+</html>

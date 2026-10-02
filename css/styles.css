@@ -1,0 +1,657 @@
+/* ==========================================================
+   VALKYRIE // TACTICAL CYBERNETIC INTERFACE - STYLESHEET
+   ========================================================== */
+
+:root {
+  --bg-deep: #05070c;
+  --bg-surface: rgba(10, 16, 28, 0.65);
+  --bg-surface-hover: rgba(16, 26, 45, 0.85);
+
+  --cyan-glow: #00f3ff;
+  --cyan-dim: rgba(0, 243, 255, 0.25);
+  --cyan-intense: #6bfeff;
+
+  --magenta-glow: #ff0055;
+  --magenta-dim: rgba(255, 0, 85, 0.25);
+
+  --amber-glow: #ffb703;
+  --lime-glow: #00ff88;
+
+  --text-main: #e2e8f0;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  --font-display: 'Orbitron', -apple-system, sans-serif;
+  --font-body: 'Rajdhani', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+
+  --ease-cinematic: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+  cursor: none;
+  /* Se reemplaza por el cursor personalizado */
+}
+
+/* ==========================================================
+   CANVAS THREE.JS & EFECTOS CINEMÁTICOS DE PANTALLA
+   ========================================================== */
+#webgl-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.vignette-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(circle at center, transparent 40%, rgba(4, 6, 11, 0.85) 95%);
+}
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  opacity: 0.35;
+}
+
+/* ==========================================================
+   CURSOR CIBERNÉTICO PERSONALIZADO
+   ========================================================== */
+.cursor-dot {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background-color: var(--cyan-glow);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px var(--cyan-glow), 0 0 20px var(--cyan-glow);
+  transition: transform 0.05s ease-out, background-color 0.2s ease;
+}
+
+.cursor-ring {
+  position: fixed;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--cyan-dim);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+  transition: width 0.3s var(--ease-cinematic),
+    height 0.3s var(--ease-cinematic),
+    border-color 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.cursor-ring::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 4px;
+  background: var(--cyan-glow);
+}
+
+.cursor-ring::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 4px;
+  background: var(--cyan-glow);
+}
+
+.cursor-ring.hover {
+  width: 60px;
+  height: 60px;
+  border-color: var(--magenta-glow);
+  background-color: rgba(255, 0, 85, 0.06);
+  box-shadow: 0 0 25px var(--magenta-dim);
+}
+
+/* ==========================================================
+   HUD HEADER
+   ========================================================== */
+.hud-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  padding: 24px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.brand-badge,
+.telemetry-bar,
+.header-controls {
+  pointer-events: auto;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--cyan-dim);
+  border-left: 3px solid var(--cyan-glow);
+  border-radius: 4px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--lime-glow);
+  box-shadow: 0 0 8px var(--lime-glow);
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #fff;
+}
+
+.badge-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--cyan-glow);
+  background: rgba(0, 243, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.telemetry-bar {
+  display: flex;
+  gap: 32px;
+  padding: 8px 24px;
+  background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
+.telemetry-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tel-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.tel-val {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--cyan-glow);
+  letter-spacing: 0.5px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hud-clock {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  padding: 6px 12px;
+  background: var(--bg-surface);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+/* ==========================================================
+   BOTONES CIBERNÉTICOS
+   ========================================================== */
+.cyber-btn {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--bg-surface);
+  border: 1px solid var(--cyan-dim);
+  padding: 12px 24px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s var(--ease-cinematic);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+.cyber-btn.sm {
+  padding: 8px 16px;
+  font-size: 0.7rem;
+}
+
+.cyber-btn:hover {
+  background: var(--cyan-glow);
+  color: #05070c;
+  border-color: var(--cyan-glow);
+  box-shadow: 0 0 25px var(--cyan-glow);
+  transform: translateY(-2px);
+}
+
+.cyber-btn.primary {
+  background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(255, 0, 85, 0.2));
+  border: 1px solid var(--cyan-glow);
+  box-shadow: 0 0 15px var(--cyan-dim);
+}
+
+.cyber-btn.primary:hover {
+  background: var(--cyan-glow);
+  color: #04060a;
+  box-shadow: 0 0 35px var(--cyan-glow);
+}
+
+.cyber-btn.secondary:hover {
+  background: rgba(255, 0, 85, 0.85);
+  border-color: var(--magenta-glow);
+  color: #fff;
+  box-shadow: 0 0 25px var(--magenta-glow);
+}
+
+/* ==========================================================
+   HERO CONTAINER & UI FLOTANTE
+   ========================================================== */
+.hero-container {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  padding: 120px 48px 80px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 580px;
+  pointer-events: auto;
+}
+
+.hero-tag {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--cyan-glow);
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+
+.hero-tag .bracket {
+  color: var(--magenta-glow);
+  font-weight: 700;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 3px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.glitch-text {
+  display: block;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3), 2px 2px var(--magenta-glow);
+}
+
+.sub-accent {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--cyan-glow);
+  letter-spacing: 6px;
+  text-shadow: 0 0 15px var(--cyan-dim);
+}
+
+.hero-desc {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+  margin-bottom: 36px;
+  max-width: 500px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.energy-module {
+  background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 16px 20px;
+  border-radius: 4px;
+  width: 360px;
+}
+
+.energy-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--cyan-glow);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.energy-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.energy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan-glow), var(--magenta-glow));
+  box-shadow: 0 0 10px var(--cyan-glow);
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==========================================================
+   TARJETAS TELEMETRÍA 3D (GLASSMORPHISM + TILT)
+   ========================================================== */
+.telemetry-cards {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  pointer-events: auto;
+  perspective: 1000px;
+}
+
+.hud-card {
+  position: relative;
+  background: var(--bg-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 243, 255, 0.18);
+  border-left: 3px solid rgba(0, 243, 255, 0.5);
+  border-radius: 8px;
+  padding: 20px 24px;
+  transform-style: preserve-3d;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  cursor: pointer;
+}
+
+.hud-card:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--cyan-glow);
+  border-left-color: var(--magenta-glow);
+  box-shadow: 0 15px 35px rgba(0, 243, 255, 0.15), 0 0 1px 1px var(--cyan-glow);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.card-code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--cyan-glow);
+  letter-spacing: 1.5px;
+}
+
+.card-status {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 2px;
+}
+
+.card-status.active {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--lime-glow);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.card-status.warning {
+  background: rgba(255, 183, 3, 0.15);
+  color: var(--amber-glow);
+  border: 1px solid rgba(255, 183, 3, 0.3);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.card-info {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+.card-specs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-bottom: 12px;
+}
+
+.card-specs span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  margin-bottom: 2px;
+}
+
+.card-specs strong {
+  color: var(--cyan-intense);
+  font-weight: 600;
+}
+
+.card-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--cyan-glow);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.hud-card:hover .card-action-btn {
+  color: #fff;
+  transform: translateX(4px);
+}
+
+/* ==========================================================
+   FOOTER HUD
+   ========================================================== */
+.hud-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  padding: 20px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.footer-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 1.5px;
+}
+
+.footer-coords {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--cyan-glow);
+  background: var(--bg-surface);
+  backdrop-filter: blur(8px);
+  padding: 6px 14px;
+  border: 1px solid rgba(0, 243, 255, 0.15);
+  border-radius: 4px;
+}
+
+/* ==========================================================
+   PRELOADER
+   ========================================================== */
+.preloader {
+  position: fixed;
+  inset: 0;
+  background: #04060a;
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.8s var(--ease-cinematic), visibility 0.8s ease;
+}
+
+.preloader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-content {
+  text-align: center;
+  width: 320px;
+}
+
+.loader-spinner {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 24px;
+  border: 2px solid rgba(0, 243, 255, 0.1);
+  border-top-color: var(--cyan-glow);
+  border-right-color: var(--magenta-glow);
+  border-radius: 50%;
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loader-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.loader-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.loader-progress {
+  width: 0%;
+  height: 100%;
+  background: var(--cyan-glow);
+  box-shadow: 0 0 10px var(--cyan-glow);
+  transition: width 0.3s ease;
+}
+
+.loader-status {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
